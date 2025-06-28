@@ -42,28 +42,6 @@
 - [x] Follow/Unfollow Users
 - [x] Real-time Notifications
 
-### 📱 Responsive Design
-- ✅ Desktop Optimized
-- ✅ Mobile Responsive
-- ✅ Touch-friendly Interface
-
-## 🛠️ Tech Stack
-
-### Backend
-- **Language**: Go 1.21+
-- **Framework**: Gin/Fiber
-- **Database**: PostgreSQL
-- **Authentication**: JWT
-- **File Storage**: Local/AWS S3
-- **Real-time**: WebSocket
-
-### Frontend
-- **Framework**: Vue.js 3
-- **Styling**: Tailwind CSS
-- **Build Tool**: Vite
-- **State Management**: Pinia
-- **HTTP Client**: Axios
-
 ## 🏗️ Project Structure
 
 ```
@@ -111,77 +89,6 @@ go-connect/
 ├── go.sum
 ├── docker-compose.yml
 └── README.md
-```
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Go 1.21 or higher
-- Node.js 16 or higher
-- PostgreSQL 13 or higher
-
-### Backend Setup
-
-1. **Clone the repository**
-```bash
-git clone https://github.com/yourusername/go-connect.git
-cd go-connect
-```
-
-2. **Setup Backend**
-```bash
-cd backend
-go mod tidy
-```
-
-3. **Environment Variables**
-```bash
-# Create .env file
-cp .env.example .env
-```
-
-```env
-# Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=your_password
-DB_NAME=go_connect
-
-# JWT
-JWT_SECRET=your_super_secret_jwt_key
-
-# Server
-PORT=8080
-```
-
-4. **Run Database Migrations**
-```bash
-go run main.go migrate
-```
-
-5. **Start Backend Server**
-```bash
-go run main.go
-```
-
-### Frontend Setup
-
-1. **Setup Frontend**
-```bash
-cd frontend
-npm install
-```
-
-2. **Start Development Server**
-```bash
-npm run dev
-```
-
-### Using Docker (Recommended)
-
-```bash
-docker-compose up -d
 ```
 
 ## 📱 Screenshots
@@ -299,8 +206,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👨‍💻 Author
 
 **Muhamad Fadhli Akbar**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Email: your.email@example.com
+- Website: [@fdhliakbar](https://fdhliakbar.vercel.app)
+- Email: fadhliakbar125@gmail.com
 
 ## 🙏 Acknowledgments
 
@@ -311,6 +218,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 <div align="center">
-  <p>Made with ❤️ in Indonesia 🇮🇩</p>
+  <img src="https://i.pinimg.com/736x/55/a9/ab/55a9aba97d1e214f849ab2e55f3dabff.jpg" alt="Go langugae banner" />
   <p>⭐ Star this repo if you find it helpful!</p>
 </div>
