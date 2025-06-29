@@ -4,6 +4,7 @@ import (
 	"go-connect/config"
 	"go-connect/handlers"
 	"go-connect/middleware"
+	"go-connect/routes"
 	"log"
 	"os"
 
@@ -42,6 +43,9 @@ func main() {
             auth.POST("/register", handlers.Register)
             auth.POST("/login", handlers.Login)
             auth.POST("/refresh", handlers.RefreshToken)
+            
+            // Setup Google OAuth routes
+            routes.SetupAuthRoutes(auth)
         }
 
         // Protected routes

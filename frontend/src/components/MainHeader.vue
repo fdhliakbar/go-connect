@@ -6,7 +6,9 @@
           <!-- Logo -->
           <div class="flex items-center space-x-4">
             <div class="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-r from-sky-300 to-cyan-500">
-              <img src="/images/icons/golang_mascot.png" alt="Website Icons">
+              <router-link to="/">
+                <img src="/images/icons/golang_mascot.png" alt="Website Icons">
+              </router-link>
             </div>
             <h1 class="text-xl font-bold text-[#F5F5F5]">Go-Connect</h1>
           </div>

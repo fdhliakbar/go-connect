@@ -1,5 +1,6 @@
 <template>
      <!-- Left Sidebar -->
+      <div class="max-w-7xl mx-auto flex bg-[#121212]">
       <aside class="hidden lg:block w-64 p-4 sticky top-16 h-screen overflow-y-auto">
         <nav class="space-y-2">
           <!-- User Profile -->
@@ -86,4 +87,5 @@
           </div>
         </div>
       </aside>
+      </div>
 </template>

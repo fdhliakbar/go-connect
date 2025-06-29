@@ -74,6 +74,7 @@ func Register(c *gin.Context) {
         FullName: user.FullName,
         Bio:      user.Bio,
         Avatar:   user.Avatar,
+        Banner:   user.Banner,
         Location: user.Location,
         Website:  user.Website,
     }
@@ -206,6 +207,7 @@ func GetProfile(c *gin.Context) {
         FullName: user.FullName,
         Bio:      user.Bio,
         Avatar:   user.Avatar,
+        Banner:   user.Banner,
         Location: user.Location,
         Website:  user.Website,
     }
@@ -229,6 +231,8 @@ func UpdateProfile(c *gin.Context) {
     var updateData struct {
         FullName string `json:"full_name"`
         Bio      string `json:"bio"`
+        Avatar   string `json:"avatar"`
+        Banner   string `json:"banner"`
         Location string `json:"location"`
         Website  string `json:"website"`
     }
@@ -242,6 +246,8 @@ func UpdateProfile(c *gin.Context) {
     updates := map[string]interface{}{
         "full_name": updateData.FullName,
         "bio":       updateData.Bio,
+        "avatar":    updateData.Avatar,
+        "banner":    updateData.Banner,
         "location":  updateData.Location,
         "website":   updateData.Website,
     }
@@ -261,6 +267,7 @@ func UpdateProfile(c *gin.Context) {
         FullName: user.FullName,
         Bio:      user.Bio,
         Avatar:   user.Avatar,
+        Banner:   user.Banner,
         Location: user.Location,
         Website:  user.Website,
     }

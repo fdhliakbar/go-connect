@@ -14,12 +14,14 @@ type User struct {
     FullName  string         `json:"full_name"`
     Bio       string         `json:"bio"`
     Avatar    string         `json:"avatar"`
+    Banner    string         `json:"banner"`
     Location  string         `json:"location"`
     Website   string         `json:"website"`
     IsActive  bool           `json:"is_active" gorm:"default:true"`
     CreatedAt time.Time      `json:"created_at"`
     UpdatedAt time.Time      `json:"updated_at"`
     DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+    GoogleID  string         `json:"google_id" gorm:"unique"`
 }
 
 type LoginRequest struct {
@@ -41,6 +43,7 @@ type UserResponse struct {
     FullName string `json:"full_name"`
     Bio      string `json:"bio"`
     Avatar   string `json:"avatar"`
+    Banner   string `json:"banner"`
     Location string `json:"location"`
     Website  string `json:"website"`
 }
