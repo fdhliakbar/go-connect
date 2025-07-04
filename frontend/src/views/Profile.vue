@@ -2,13 +2,6 @@
   <!-- Header from Components -->
   <MainHeader />
 
-  <!-- Left Section -->
-   
-  <!-- End Left Section -->
-
-  <!-- Main Content -->
-
-
     <!-- Main Content -->
     <main class="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8 bg-[#121212]">
       <!-- Profile Header Card -->
@@ -25,7 +18,7 @@
           
           <!-- Banner Upload Button -->
           <div class="absolute top-4 right-4">
-            <label for="banner-upload" class="bg-black bg-opacity-50 hover:bg-opacity-70 text-white px-3 py-2 rounded-lg cursor-pointer transition-all">
+            <label for="banner-upload" @click="console.log('Banner label clicked')" class="bg-black bg-opacity-50 hover:bg-opacity-70 text-white px-3 py-2 rounded-lg cursor-pointer transition-all">
               <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -37,6 +30,7 @@
               type="file" 
               accept="image/*" 
               @change="handleBannerUpload"
+              @click="console.log('Banner input clicked')"
               class="hidden"
             />
           </div>
@@ -62,7 +56,7 @@
               </div>
               
               <!-- Avatar Upload Button -->
-              <label for="avatar-upload" class="absolute bottom-2 right-2 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full cursor-pointer shadow-lg transition-all">
+              <label for="avatar-upload" @click="console.log('Avatar label clicked')" class="absolute bottom-2 right-2 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full cursor-pointer shadow-lg transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0118.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -73,6 +67,7 @@
                 type="file" 
                 accept="image/*" 
                 @change="handleAvatarUpload"
+                @click="console.log('Avatar input clicked')"
                 class="hidden"
               />
             </div>
@@ -168,10 +163,10 @@
 </template>
 
 <script setup>
-import LeftSection from '@/components/LeftSection.vue'
 import MainHeader from '@/components/MainHeader.vue'
 import { ref, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/auth_supabase'
+import { createClient } from '@supabase/supabase-js'
 
 const authStore = useAuthStore()
 const error = ref('')
@@ -185,6 +180,22 @@ const form = ref({
   avatar: '',
   banner: ''
 })
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseKey = import.meta.env.VITE_SUPABASE_KEY
+
+// Debug: cek apakah env variables terbaca
+console.log('Supabase URL:', supabaseUrl)
+console.log('Supabase Key:', supabaseKey ? 'Key loaded' : 'Key not found')
+console.log('Full Supabase Key:', supabaseKey)
+
+// Pastikan env variables ada sebelum membuat client
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Missing Supabase credentials!')
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey)
+
 
 onMounted(() => {
   // Initialize form with current user data
@@ -200,45 +211,171 @@ onMounted(() => {
   }
 })
 
-const handleAvatarUpload = (event) => {
+const handleAvatarUpload = async (event) => {
+  console.log('Avatar upload function called')
   const file = event.target.files[0]
-  if (file) {
-    // Preview the image
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      form.value.avatar = e.target.result
+  console.log('Selected file:', file)
+  
+  if (!file) {
+    console.log('No file selected')
+    return
+  }
+  
+  if (!authStore.user) {
+    console.log('No user found in authStore')
+    return
+  }
+  
+  console.log('Uploading avatar:', file.name, 'User ID:', authStore.user.id)
+  console.log('File size:', file.size, 'bytes')
+  console.log('File type:', file.type)
+  
+  try {
+    // Upload file ke Supabase Storage bucket 'avatars'
+    const fileName = `profile-${authStore.user.id}-${Date.now()}.${file.name.split('.').pop()}`
+    const { data, error } = await supabase.storage
+      .from('avatars')
+      .upload(fileName, file, { upsert: true })
+    
+    console.log('Upload response data:', data)
+    console.log('Upload response error:', error)
+    
+    if (!error && data) {
+      // Dapatkan public URL dari file yang diupload
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(data.path)
+      
+      console.log('Avatar uploaded successfully, URL:', publicUrl)
+      
+      // Update form dengan URL baru
+      form.value.avatar = publicUrl
+      
+      // Langsung update ke database juga
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ avatar: publicUrl })
+        .eq('id', authStore.user.id)
+        
+      if (!updateError) {
+        console.log('Avatar URL updated in database')
+        // Update local user data
+        if (authStore.user) {
+          authStore.user.avatar = publicUrl
+        }
+      } else {
+        console.error('Failed to update avatar URL in database:', updateError)
+      }
+      
+    } else {
+      console.error('Avatar upload error:', error)
+      error.value = 'Failed to upload avatar: ' + (error?.message || 'Unknown error')
     }
-    reader.readAsDataURL(file)
-    // TODO: Upload to server
+  } catch (err) {
+    console.error('Exception during upload:', err)
+    error.value = 'Upload failed: ' + err.message
   }
 }
 
-const handleBannerUpload = (event) => {
+const handleBannerUpload = async (event) => {
+  console.log('Banner upload function called')
   const file = event.target.files[0]
-  if (file) {
-    // Preview the image
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      form.value.banner = e.target.result
+  console.log('Selected file:', file)
+  
+  if (!file) {
+    console.log('No file selected')
+    return
+  }
+  
+  if (!authStore.user) {
+    console.log('No user found in authStore')
+    return
+  }
+  
+  console.log('Uploading banner:', file.name, 'User ID:', authStore.user.id)
+  console.log('File size:', file.size, 'bytes')
+  console.log('File type:', file.type)
+  
+  try {
+    // Upload file ke Supabase Storage bucket 'banners'
+    const fileName = `banner-${authStore.user.id}-${Date.now()}.${file.name.split('.').pop()}`
+    const { data, error } = await supabase.storage
+      .from('banners')
+      .upload(fileName, file, { upsert: true })
+    
+    console.log('Upload response data:', data)
+    console.log('Upload response error:', error)
+    
+    if (!error && data) {
+      // Dapatkan public URL dari file yang diupload
+      const { data: { publicUrl } } = supabase.storage
+        .from('banners')
+        .getPublicUrl(data.path)
+      
+      console.log('Banner uploaded successfully, URL:', publicUrl)
+      
+      // Update form dengan URL baru
+      form.value.banner = publicUrl
+      
+      // Langsung update ke database juga
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ banner: publicUrl })
+        .eq('id', authStore.user.id)
+        
+      if (!updateError) {
+        console.log('Banner URL updated in database')
+        // Update local user data
+        if (authStore.user) {
+          authStore.user.banner = publicUrl
+        }
+      } else {
+        console.error('Failed to update banner URL in database:', updateError)
+      }
+      
+    } else {
+      console.error('Banner upload error:', error)
+      error.value = 'Failed to upload banner: ' + (error?.message || 'Unknown error')
     }
-    reader.readAsDataURL(file)
-    // TODO: Upload to server
+  } catch (err) {
+    console.error('Exception during upload:', err)
+    error.value = 'Upload failed: ' + err.message
   }
 }
 
 const handleUpdateProfile = async () => {
   error.value = ''
   success.value = false
-  
-  const result = await authStore.updateProfile(form.value)
-  
-  if (result.success) {
-    success.value = true
-    setTimeout(() => {
-      success.value = false
-    }, 3000)
-  } else {
-    error.value = result.error
+
+  try {
+    // Update langsung ke tabel 'users' di Supabase PostgreSQL
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
+        full_name: form.value.full_name,
+        bio: form.value.bio,
+        location: form.value.location,
+        website: form.value.website,
+        avatar: form.value.avatar,
+        banner: form.value.banner
+      })
+      .eq('id', authStore.user.id)
+
+    if (!updateError) {
+      success.value = true
+      setTimeout(() => {
+        success.value = false
+      }, 3000)
+      // Update local user data
+      Object.assign(authStore.user, form.value)
+      console.log('Profile updated successfully in Supabase')
+    } else {
+      console.error('Update error:', updateError)
+      error.value = 'Failed to update profile: ' + updateError.message
+    }
+  } catch (err) {
+    console.error('Exception during profile update:', err)
+    error.value = 'Update failed: ' + err.message
   }
 }
 </script>

@@ -1,226 +1,156 @@
 import { defineStore } from 'pinia'
-import api from '@/utils/api'
-import axios from 'axios'
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseKey = import.meta.env.VITE_SUPABASE_KEY
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
-    token: localStorage.getItem('token'),
-    refreshToken: null,
-    isAuthenticated: false,
     loading: false,
     error: null
   }),
 
   getters: {
-    isLoggedIn: (state) => state.isAuthenticated && state.token,
-    currentUser: (state) => state.user,
-    isLoading: (state) => state.loading
+    isAuthenticated: (state) => !!state.user
   },
 
   actions: {
-    // Initialize auth state from localStorage
-    initAuth() {
-      const token = localStorage.getItem('token')
-      const refreshToken = localStorage.getItem('refreshToken')
-      const user = localStorage.getItem('user')
-
-      if (token && user) {
-        this.token = token
-        this.refreshToken = refreshToken
-        this.user = JSON.parse(user)
-        this.isAuthenticated = true
-      }
-    },
-
-    // Register new user
-    async register(userData) {
-      this.loading = true
-      this.error = null
-      
-      try {
-        const response = await api.post('/auth/register', userData)
-        const { data } = response.data
-        
-        this.user = data.user
-        this.token = data.token
-        this.refreshToken = data.refresh_token
-        this.isAuthenticated = true
-        
-        // Save to localStorage
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('refreshToken', data.refresh_token)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        
-        return { success: true, data: response.data }
-      } catch (error) {
-        this.error = error.response?.data?.error || 'Registration failed'
-        return { success: false, error: this.error }
-      } finally {
-        this.loading = false
-      }
-    },
-
-    // Login user
-    async login(credentials) {
-      this.loading = true
-      this.error = null
-      
-      try {
-        const response = await api.post('/auth/login', credentials)
-        const { data } = response.data
-        
-        this.user = data.user
-        this.token = data.token
-        this.refreshToken = data.refresh_token
-        this.isAuthenticated = true
-        
-        // Save to localStorage
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('refreshToken', data.refresh_token)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        
-        return { success: true, data: response.data }
-      } catch (error) {
-        this.error = error.response?.data?.error || 'Login failed'
-        return { success: false, error: this.error }
-      } finally {
-        this.loading = false
-      }
-    },
-
-    // Logout user
-    async logout() {
-      try {
-        await api.post('/logout')
-      } catch (error) {
-        console.error('Logout error:', error)
-      } finally {
-        this.user = null
-        this.token = null
-        this.refreshToken = null
-        this.isAuthenticated = false
-        
-        // Clear localStorage
-        localStorage.removeItem('token')
-        localStorage.removeItem('refreshToken')
-        localStorage.removeItem('user')
-      }
-    },
-
-    // Get user profile
-    async getProfile() {
-      try {
-        const response = await api.get('/profile')
-        this.user = response.data.data
-        localStorage.setItem('user', JSON.stringify(this.user))
-        return { success: true, data: response.data.data }
-      } catch (error) {
-        return { success: false, error: error.response?.data?.error }
-      }
-    },
-
-    // Update user profile
-    async updateProfile(profileData) {
-      this.loading = true
-      try {
-        const response = await api.put('/profile', profileData)
-        this.user = response.data.data
-        localStorage.setItem('user', JSON.stringify(this.user))
-        return { success: true, data: response.data }
-      } catch (error) {
-        return { success: false, error: error.response?.data?.error }
-      } finally {
-        this.loading = false
-      }
-    },
-
-    // Google Sign Up
-    async googleSignUp() {
+    async register(email, password, username, fullName) {
       this.loading = true
       this.error = null
 
       try {
-        // Get Google OAuth URL from backend - fix the URL
-        const response = await axios.get('/api/auth/google/url')
-        const { url } = response.data
-
-        // Open Google OAuth in popup
-        const popup = window.open(
-          url,
-          'google-oauth',
-          'width=500,height=600,scrollbars=yes,resizable=yes'
-        )
-
-        // Return promise that resolves when popup closes or auth completes
-        return new Promise((resolve) => {
-          // Check if popup was blocked
-          if (!popup) {
-            this.error = 'Popup blocked. Please allow popups for this site.'
-            this.loading = false
-            resolve({ success: false, error: this.error })
-            return
-          }
-
-          // Listen for messages from popup
-          const messageHandler = async (event) => {
-            if (event.origin !== window.location.origin) return
-
-            if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
-              try {
-                // Send authorization code to backend - fix the URL
-                const authResponse = await axios.post('/api/auth/google/callback', {
-                  code: event.data.code
-                })
-
-                const { token, user } = authResponse.data
-
-                this.token = token
-                this.user = user
-                localStorage.setItem('token', token)
-                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-
-                this.loading = false
-                window.removeEventListener('message', messageHandler)
-                popup.close()
-                resolve({ success: true })
-              } catch (error) {
-                this.error = error.response?.data?.error || 'Google authentication failed'
-                this.loading = false
-                window.removeEventListener('message', messageHandler)
-                popup.close()
-                resolve({ success: false, error: this.error })
-              }
-            }
-
-            if (event.data.type === 'GOOGLE_AUTH_ERROR') {
-              this.error = event.data.error || 'Google authentication failed'
-              this.loading = false
-              window.removeEventListener('message', messageHandler)
-              popup.close()
-              resolve({ success: false, error: this.error })
-            }
-          }
-
-          // Add event listener
-          window.addEventListener('message', messageHandler)
-
-          // Check if popup is closed manually
-          const checkClosed = setInterval(() => {
-            if (popup.closed) {
-              clearInterval(checkClosed)
-              window.removeEventListener('message', messageHandler)
-              this.loading = false
-              resolve({ success: false, error: 'Authentication cancelled' })
-            }
-          }, 1000)
+        // 1. Register user dengan Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email,
+          password
         })
 
+        if (authError) throw authError
+
+        // 2. Buat record di tabel users
+        if (authData.user) {
+          const { error: profileError } = await supabase
+            .from('users')
+            .insert({
+              id: authData.user.id,
+              email: authData.user.email,
+              username,
+              full_name: fullName,
+              created_at: new Date().toISOString()
+            })
+
+          if (profileError) throw profileError
+        }
+
+        return { success: true, data: authData }
       } catch (error) {
-        console.error('Google auth error:', error)
-        this.error = error.response?.data?.error || 'Failed to initialize Google authentication'
+        this.error = error.message
+        return { success: false, error: error.message }
+      } finally {
         this.loading = false
-        return { success: false, error: this.error }
+      }
+    },
+
+    async login(email, password) {
+      this.loading = true
+      this.error = null
+
+      try {
+        // 1. Login dengan Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        })
+
+        if (authError) throw authError
+
+        // 2. Ambil data profile dari tabel users
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authData.user.id)
+          .single()
+
+        if (userError) {
+          console.error('User data error:', userError)
+          // Jika belum ada data di tabel users, buat record baru
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert({
+              id: authData.user.id,
+              email: authData.user.email,
+              username: authData.user.email.split('@')[0],
+              full_name: '',
+              created_at: new Date().toISOString()
+            })
+          
+          if (!insertError) {
+            const { data: newUserData } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', authData.user.id)
+              .single()
+            this.user = newUserData
+          }
+        } else {
+          this.user = userData
+        }
+
+        return { success: true, data: authData }
+      } catch (error) {
+        this.error = error.message
+        return { success: false, error: error.message }
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async logout() {
+      this.loading = true
+      try {
+        const { error } = await supabase.auth.signOut()
+        if (error) throw error
+        this.user = null
+      } catch (error) {
+        this.error = error.message
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async initAuth() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (session?.user) {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
+          
+          this.user = userData
+        }
+
+        // Listen untuk perubahan auth state
+        supabase.auth.onAuthStateChange(async (event, session) => {
+          if (event === 'SIGNED_IN' && session?.user) {
+            const { data: userData } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', session.user.id)
+              .single()
+            
+            this.user = userData
+          } else if (event === 'SIGNED_OUT') {
+            this.user = null
+          }
+        })
+      } catch (error) {
+        console.error('Init auth error:', error)
       }
     }
   }
