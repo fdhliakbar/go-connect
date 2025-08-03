@@ -54,12 +54,6 @@
       <!-- Left Sidebar -->
       <aside class="hidden lg:block w-64 p-4 sticky top-16 h-screen overflow-y-auto">
         <nav class="space-y-2">
-          <!-- User Profile -->
-          <router-link to="/profile" class="flex items-center space-x-3 p-3 rounded-lg hover:bg-[#1A1A1A] transition-colors cursor-pointer">
-            <img src="https://via.placeholder.com/40" alt="Profile" class="w-10 h-10 rounded-full">
-            <span class="font-medium">Muhamad Fadhli Akbar</span>
-          </router-link>
-
           <!-- Navigation Items -->
           <div class="flex items-center space-x-3 p-3 rounded-lg hover:bg-[#1A1A1A] transition-colors cursor-pointer">
             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
